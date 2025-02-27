@@ -5,9 +5,9 @@ from scipy.stats import norm
 import blackscholes as bs
 
 def get_data(type):
-    synth_calls = BS_call_synthetic_data(100,1000)
+    synth_calls = BS_call_synthetic_data(100,int(1e5))
 
-    synth_puts = BS_put_synthetic_data(100,1000)
+    synth_puts = BS_put_synthetic_data(100,int(1e5))
 
     # setting dataframe
     if type == "calls":
