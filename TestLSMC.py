@@ -25,31 +25,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SPYDataHandler:
-    """
-    Processes SPY data files for use in option pricing models
-    """
     
     def __init__(self, base_path: str):
-        """
-        Initialize with path to SPY data files
-        
-        Parameters:
-        - base_path: Base directory for SPY data files
-        """
+
         self.base_path = base_path
         self.logger = logger
         
     def load_data(self, quarter: str, month: str) -> pd.DataFrame:
-        """
-        Load SPY data for a specific quarter and month
-        
-        Parameters:
-        - quarter: Quarter identifier (e.g., 'q1')
-        - month: Month identifier (e.g., '01' for January)
-        
-        Returns:
-        - Processed DataFrame with SPY option data
-        """
+
         try:
             file_path = os.path.join(
                 self.base_path, 
@@ -66,19 +49,11 @@ class SPYDataHandler:
             
         except Exception as e:
             self.logger.error(f"Error loading SPY data: {e}")
-            raise
+            raise "bruh"
             
     def process_data(self, raw_data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-        """
-        Process raw SPY data into separate calls and puts DataFrames
-        
-        Parameters:
-        - raw_data: Raw SPY data DataFrame
-        
-        Returns:
-        - Dictionary with processed DataFrames for calls and puts
-        """
-        # Define columns to drop for calls and puts
+
+        #Call/Put Droppable columns from .txt file :O
         call_dropables = ["[QUOTE_UNIXTIME]", "[QUOTE_READTIME]", "[QUOTE_TIME_HOURS]", 
                           "[EXPIRE_UNIX]", "[P_BID]", "[P_ASK]", "[P_SIZE]", "[P_LAST]", 
                           "[P_DELTA]", "[P_GAMMA]", "[P_VEGA]", "[P_THETA]", "[P_RHO]", 
@@ -89,7 +64,7 @@ class SPYDataHandler:
                          "[C_THETA]", "[C_RHO]", "[C_IV]", "[C_VOLUME]", "[C_LAST]", 
                          "[C_SIZE]", "[C_BID]", "[C_ASK]"]
         
-        # Create separate DataFrames for calls and puts
+        #split dataframe into two without dropped columns for calls n puts.
         df_calls = raw_data.drop(columns=call_dropables)
         df_puts = raw_data.drop(columns=put_dropables)
         
@@ -103,20 +78,12 @@ class SPYDataHandler:
         }
     
     def extract_market_parameters(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
-        """
-        Extract key market parameters from processed SPY data
-        
-        Parameters:
-        - data: Processed data dictionary
-        
-        Returns:
-        - Dictionary with market parameters
-        """
+       
         calls_df = data["calls"]
         puts_df = data["puts"]
         underlying_df = data["underlying"]
         
-        # Extract current underlying price
+        # Get current underlying price
         current_price = underlying_df["[UNDERLYING_LAST]"].iloc[-1]
         
         # Calculate historical volatility (annualized)
@@ -189,13 +156,7 @@ class OptionParameters:
     
     @classmethod
     def from_spy_data(cls, market_params: Dict[str, float], strike_price: Optional[float] = None):
-        """
-        Create option parameters directly from SPY market data
-        
-        Parameters:
-        - market_params: Dictionary with market parameters
-        - strike_price: Optional strike price (defaults to ATM)
-        """
+
         if strike_price is None:
             strike_price = market_params["spot_price"]
             
@@ -209,17 +170,9 @@ class OptionParameters:
         )
 
 class LeastSquaresMonteCarloPricer:
-    """
-    Advanced Least Squares Monte Carlo pricer for American options
-    """
     
     def __init__(self, params: OptionParameters):
-        """
-        Initialize with option parameters
-        
-        Parameters:
-        - params: Option pricing parameters
-        """
+    
         self.params = params
         self.logger = logger
         self.model_id = hashlib.md5(str(params.__dict__).encode()).hexdigest()[:8]
@@ -228,31 +181,17 @@ class LeastSquaresMonteCarloPricer:
     @staticmethod
     @jit(nopython=True, parallel=True)
     def _generate_stock_paths(
-        S0: float, 
-        r: float, 
-        sigma: float, 
-        T: float, 
-        div: float,
-        n_steps: int,
-        n_paths: int,
-        seed: int
+        S0: float, # Initial Stock Price
+        r: float, # Risk-free rate
+        sigma: float, # Volatility
+        T: float, # Time to maturity (in years)
+        div: float, # Dividend yield
+        n_steps: int, # Number of time steps
+        n_paths: int, # Number of simulation paths
+        seed: int # Random seed
     ) -> np.ndarray:
-        """
-        JIT-accelerated stock path generation
         
-        Parameters:
-        - S0: Initial stock price
-        - r: Risk-free rate
-        - sigma: Volatility
-        - T: Time to maturity (years)
-        - div: Dividend yield
-        - n_steps: Number of time steps
-        - n_paths: Number of simulation paths
-        - seed: Random seed
-        
-        Returns:
-        - Array of simulated stock paths
-        """
+        #Returns Array of simulated stock paths
         np.random.seed(seed)
         dt = T / n_steps
         paths = np.zeros((n_paths, n_steps + 1))
@@ -261,18 +200,12 @@ class LeastSquaresMonteCarloPricer:
         for i in prange(n_paths):
             for t in range(1, n_steps + 1):
                 z = np.random.standard_normal()
-                paths[i, t] = paths[i, t-1] * np.exp((r - div - 0.5 * sigma**2) * dt + 
-                                                     sigma * np.sqrt(dt) * z)
+                paths[i, t] = paths[i, t-1] * np.exp((r - div - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z)
         
         return paths
     
     def generate_stock_paths(self) -> np.ndarray:
-        """
-        Generate stock price paths
         
-        Returns:
-        - Array of simulated stock paths
-        """
         return self._generate_stock_paths(
             self.params.spot_price,
             self.params.risk_free_rate,
@@ -285,12 +218,7 @@ class LeastSquaresMonteCarloPricer:
         )
     
     def price_option(self) -> Dict[str, Union[float, np.ndarray]]:
-        """
-        Price American option using Least Squares Monte Carlo
-        
-        Returns:
-        - Dictionary with pricing results
-        """
+    
         start_time = time.time()
         
         # Generate stock paths
@@ -360,7 +288,7 @@ class LeastSquaresMonteCarloPricer:
         option_price = np.mean(payoffs[:, 1])
         option_std = np.std(payoffs[:, 1]) / np.sqrt(self.params.num_paths)
         
-        # Calculate confidence interval
+        # Confidence Interval
         ci_lower = option_price - stats.norm.ppf(0.975) * option_std
         ci_upper = option_price + stats.norm.ppf(0.975) * option_std
         
@@ -381,12 +309,7 @@ class LeastSquaresMonteCarloPricer:
         }
     
     def plot_results(self, results: Dict[str, Union[float, np.ndarray]]) -> None:
-        """
-        Plot pricing results for analysis
         
-        Parameters:
-        - results: Dictionary with pricing results
-        """
         # Plot sample paths
         plt.figure(figsize=(12, 8))
         
@@ -410,7 +333,7 @@ class LeastSquaresMonteCarloPricer:
         # Plot exercise boundary
         plt.figure(figsize=(12, 8))
         
-        # For each time step, find the average stock price where exercise occurs
+        # For each time step find average stock price where exercise occurs
         exercise_boundary = []
         time_steps = []
         
@@ -435,11 +358,10 @@ class LeastSquaresMonteCarloPricer:
         plt.close()
 
 def main():
-    """
-    Main function to demonstrate SPY option pricing model
-    """
-    # Define paths
+
+    # Paths
     optiondx_pwd = "/Users/nicolas/desktop/quantitative_finance/FEC/ml-american-options/optiondx/"
+    #optiondx_pwd = "something something something file in your computer"
     
     # Initialize SPY data handler
     spy_handler = SPYDataHandler(optiondx_pwd)
@@ -479,7 +401,7 @@ def main():
     call_results = call_pricer.price_option()
     call_pricer.plot_results(call_results)
     
-    # Compare with market prices (if available)
+    # Compare with market prices
     atm_puts = processed_data["puts"][
         abs(processed_data["puts"]["[STRIKE]"] - market_params["spot_price"]) < 1
     ]
@@ -524,7 +446,6 @@ def main():
     print(f"Put Option: {put_results['computation_time']:.2f} seconds")
     print(f"Call Option: {call_results['computation_time']:.2f} seconds")
     
-    # Save results to CSV
     results_df = pd.DataFrame({
         'Parameter': ['Spot Price', 'Strike Price', 'Risk-Free Rate', 'Implied Volatility',
                      'Days to Expiration', 'Put Price', 'Put Std Error', 'Call Price', 'Call Std Error',
