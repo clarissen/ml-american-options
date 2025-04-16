@@ -1,6 +1,6 @@
 import pandas as pd
 
-optiondx_pwd = "/Users/nicolas/desktop/quantitative_finance/FEC/ml-american-options/optiondx/"
+optiondx_pwd = "ml-american-options/optiondx/"
 SPY_pwd_q1_eod = optiondx_pwd + "spy_eod_2023q1-zfoivd/"
 
 SPY_jan23_eod_df_raw = pd.read_csv(
@@ -13,3 +13,10 @@ put_dropables = ["[QUOTE_UNIXTIME]", "[QUOTE_READTIME]", "[QUOTE_TIME_HOURS]", "
 
 df_calls = SPY_jan23_eod_df_raw.drop(columns=call_dropables)
 df_puts = SPY_jan23_eod_df_raw.drop(columns=put_dropables)
+
+[QUOTE_DATE]	[UNDERLYING_LAST]	[DTE]						[C_IV]		[C_LAST]	[C_SIZE]	[C_BID]	[C_ASK]	[STRIKE]	[STRIKE_DISTANCE]	[STRIKE_DISTANCE_PCT]
+
+call_simplest_drops = ["[EXPIRE_DATE]", "[C_DELTA]", "[C_GAMMA]", "[C_VEGA]", "[C_THETA]", "[C_RHO]", "[C_VOLUME]",  ]
+df_calls_simplest = df_calls.drop(columns=)
+
+# need dividend yield and interest rate 
