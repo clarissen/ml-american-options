@@ -25,5 +25,6 @@ def random_forest_model(df, features, target, test_float, rand_int, n_trees):
 
     # make predictions on the test set
     predictions = rf_model.predict(X_test)
+    mse = mean_squared_error(y_test, predictions)
 
-    return mean_squared_error(y_test, predictions), predictions
+    return y, predictions, mse
