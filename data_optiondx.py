@@ -8,7 +8,7 @@ import numpy as np
 # optiondx_pwd = "/Users/nicolas/desktop/quantitative_finance/FEC/ml-american-options/ml-american-options/optiondx/"
 # SPY_pwd_q1_eod = optiondx_pwd + "spy_eod_2023q1-zfoivd/"
 
-path_SPY_q1_2023 = "/Users/nicolas/desktop/quantitative_finance/FEC/ml-american-options/optiondx/spy_eod_2023q1-zfoivd/"
+path_SPY_q1_2023 = "./optiondx/spy_eod_2023q1-zfoivd/"
 
 SPY_jan23_eod_df_raw = pd.read_csv(path_SPY_q1_2023 + "spy_eod_202301.txt", delimiter=", ")
 
@@ -35,7 +35,7 @@ df_puts_cleaned = df_puts[["[UNDERLYING_LAST]", "[STRIKE]", "[P_IV]", "[DTE]",  
 
 # RISK FREE RATE FROM FED INTEREST RATE
 # ==========================
-path_fed_rate = "/Users/nicolas/desktop/quantitative_finance/FEC/ml-american-options/fed/"
+path_fed_rate = "./fed/"
 df_r = pd.read_csv(path_fed_rate + 'fed_interest_rate_q1_2023.csv')
 
 risk_free_rate = float(df_r.at[5, "Federal funds effective rate"])/100
